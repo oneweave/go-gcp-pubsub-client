@@ -17,11 +17,11 @@ import (
     "log"
     "net/http"
 
-    "github.com/oneweave/oneweave-pubsub/consume"
+    oneweavepubsub "github.com/oneweave/oneweave-pubsub"
 )
 
 func main() {
-    httpConsumer := consume.NewHTTPConsumer()
+    httpConsumer := oneweavepubsub.NewHTTPConsumer()
 
     http.HandleFunc("/events", func(w http.ResponseWriter, r *http.Request) {
         event, err := httpConsumer.ConsumeHTTPRequest(r)
@@ -35,6 +35,65 @@ func main() {
     })
 
     log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
+## Pub/Sub HTTP Consumer (Cloud Run)
+
+```go
+package main
+
+import (
+    "log"
+    "net/http"
+
+    oneweavepubsub "github.com/oneweave/oneweave-pubsub"
+)
+
+func main() {
+    consumer, err := oneweavepubsub.NewPubSubHTTPConsumer(oneweavepubsub.PubSubHTTPConsumerConfig{})
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    http.HandleFunc("/pubsub/push", func(w http.ResponseWriter, r *http.Request) {
+        event, err := consumer.ConsumeHTTPRequest(r)
+        if err != nil {
+            http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+            return
+        }
+
+        // event is the embedded CloudEvent v1 from Pub/Sub message.data.
+        // If message.data is not a valid CloudEvent JSON, parsing fails.
+        _ = event
+        w.WriteHeader(http.StatusOK)
+    })
+
+    log.Fatal(http.ListenAndServe(":8080", nil))
+}
+```
+
+### Decode Typed Payload From Embedded CloudEvent
+
+```go
+type OrderEvent struct {
+    OrderID string `json:"orderId"`
+}
+
+func handlePush(w http.ResponseWriter, r *http.Request) {
+    consumer, _ := oneweavepubsub.NewPubSubHTTPConsumer(oneweavepubsub.PubSubHTTPConsumerConfig{})
+
+    var payload OrderEvent
+    event, err := consumer.ConsumeHTTPRequestDataAs(r, &payload)
+    if err != nil {
+        http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+        return
+    }
+
+    // event is the embedded CloudEvent; payload is event.data decoded into OrderEvent.
+    _ = event
+    _ = payload
+    w.WriteHeader(http.StatusOK)
 }
 ```
 
