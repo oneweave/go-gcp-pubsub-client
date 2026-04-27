@@ -1,6 +1,6 @@
-# oneweave-pubsub
+# go-gcp-pubsub-cloudevent
 
-`oneweave-pubsub` is a lightweight Go library for producing and consuming CloudEvents in pub/sub workflows.
+A lightweight Go library for producing and consuming CloudEvents in pub/sub workflows.
 
 ## Packages
 
