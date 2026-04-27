@@ -7,7 +7,7 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/google/uuid"
-	"github.com/oneweave/oneweave-pubsub/shared"
+	"github.com/oneweave/go-gcp-pubsub-client/shared"
 )
 
 // Config controls publisher defaults.

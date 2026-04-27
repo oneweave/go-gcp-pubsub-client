@@ -11,8 +11,21 @@ Treat [README.md](README.md) as the primary usage and package overview.
 ## Package Boundaries
 
 - `produce/`: create and publish CloudEvents from arbitrary payloads.
-- `consume/`: decode CloudEvent payload data for consumers.
+- `consume/`: parse CloudEvents from HTTP requests, including Pub/Sub push wrappers.
 - `pubsub.go`: thin convenience re-exports only.
+
+## Consume Conventions
+
+- `consume.HTTPConsumer` parses direct CloudEvent HTTP requests.
+- `consume.PubSubHTTPConsumer` expects Pub/Sub `message.data` to contain an embedded CloudEvent JSON.
+- Treat non-CloudEvent Pub/Sub payload JSON as invalid input for `PubSubHTTPConsumer`.
+- Use `ConsumeHTTPRequestDataAs` when callers need typed decoding of embedded CloudEvent `data`.
+
+## Root API Notes
+
+- Keep root package re-exports in `pubsub.go` aligned with subpackage APIs (`produce` and `consume`).
+- Root constructors should remain thin wrappers over subpackage constructors.
+- Preserve the module path `github.com/oneweave/go-gcp-pubsub-client` in examples and imports.
 
 ## Publish Conventions
 

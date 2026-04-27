@@ -1,8 +1,8 @@
 package oneweavepubsub
 
 import (
-	"github.com/oneweave/oneweave-pubsub/consume"
-	"github.com/oneweave/oneweave-pubsub/produce"
+	"github.com/oneweave/go-gcp-pubsub-client/consume"
+	"github.com/oneweave/go-gcp-pubsub-client/produce"
 )
 
 type HTTPConsumer = consume.HTTPConsumer

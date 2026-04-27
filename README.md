@@ -1,4 +1,4 @@
-# go-gcp-pubsub-cloudevent
+# go-gcp-pubsub-client
 
 A lightweight Go library for producing and consuming CloudEvents in pub/sub workflows.
 
@@ -17,7 +17,7 @@ import (
     "log"
     "net/http"
 
-    oneweavepubsub "github.com/oneweave/oneweave-pubsub"
+    oneweavepubsub "github.com/oneweave/go-gcp-pubsub-client"
 )
 
 func main() {
@@ -47,7 +47,7 @@ import (
     "log"
     "net/http"
 
-    oneweavepubsub "github.com/oneweave/oneweave-pubsub"
+    oneweavepubsub "github.com/oneweave/go-gcp-pubsub-client"
 )
 
 func main() {
@@ -107,7 +107,7 @@ import (
     "log"
 
     cloudevents "github.com/cloudevents/sdk-go/v2"
-    "github.com/oneweave/oneweave-pubsub/produce"
+    "github.com/oneweave/go-gcp-pubsub-client/produce"
 )
 
 type sender struct{}

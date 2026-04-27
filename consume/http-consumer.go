@@ -6,7 +6,7 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	cehttp "github.com/cloudevents/sdk-go/v2/protocol/http"
-	"github.com/oneweave/oneweave-pubsub/shared"
+	"github.com/oneweave/go-gcp-pubsub-client/shared"
 )
 
 // HTTPConsumer parses CloudEvents from HTTP requests.

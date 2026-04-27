@@ -1,4 +1,4 @@
-module github.com/oneweave/oneweave-pubsub
+module github.com/oneweave/go-gcp-pubsub-client
 
 go 1.23.0
 
