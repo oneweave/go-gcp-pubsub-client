@@ -52,6 +52,7 @@ func (c *PubSubHTTPConsumer) ConsumeHTTPRequest(request *http.Request) (cloudeve
 		return cloudevents.Event{}, fmt.Errorf("decode pubsub message data: %w", err)
 	}
 
+	fmt.Printf("decoded Data %s\n", decodedData)
 	embeddedEvent, err := parseEmbeddedCloudEvent(decodedData)
 	if err != nil {
 		return cloudevents.Event{}, err
@@ -84,6 +85,7 @@ func (c *PubSubHTTPConsumer) ConsumeHTTPRequestDataAs(request *http.Request, out
 func parseEmbeddedCloudEvent(data []byte) (cloudevents.Event, error) {
 	var raw map[string]json.RawMessage
 	if err := json.Unmarshal(data, &raw); err != nil {
+		fmt.Printf("error unmarshalling data: %v\n", err)
 		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not valid JSON")
 	}
 
