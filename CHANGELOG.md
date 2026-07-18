@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/oneweave/go-gcp-pubsub-client/compare/v1.1.0...v1.2.0) (2026-07-18)
+
+
+### Features
+
+* add temporary logging ([f719726](https://github.com/oneweave/go-gcp-pubsub-client/commit/f7197260848dc6e604f91fbb1e7db77c53a59d9e))
+
 ## [1.1.0](https://github.com/oneweave/go-gcp-pubsub-client/compare/v1.0.0...v1.1.0) (2026-07-18)
 
 
