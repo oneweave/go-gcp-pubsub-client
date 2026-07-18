@@ -101,6 +101,24 @@ func TestPubSubHTTPConsumerConsumeHTTPRequest(t *testing.T) {
 		assert.Empty(t, event)
 	})
 
+	t.Run("invalid decoded json rejected", func(t *testing.T) {
+		consumer, err := NewPubSubHTTPConsumer(PubSubHTTPConsumerConfig{})
+		require.NoError(t, err)
+
+		req := pubSubRequest(t, http.MethodPost, fmt.Sprintf(`{
+			"message":{
+				"messageId":"m-1",
+				"data":%q
+			}
+		}`,
+			base64.StdEncoding.EncodeToString([]byte(`{"specversion":`)),
+		))
+		event, consumeErr := consumer.ConsumeHTTPRequest(req)
+		require.Error(t, consumeErr)
+		assert.Contains(t, consumeErr.Error(), "pubsub message data is not valid JSON")
+		assert.Empty(t, event)
+	})
+
 	t.Run("non cloudevent json rejected", func(t *testing.T) {
 		consumer, err := NewPubSubHTTPConsumer(PubSubHTTPConsumerConfig{})
 		require.NoError(t, err)

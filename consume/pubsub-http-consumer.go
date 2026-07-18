@@ -51,18 +51,16 @@ func (c *PubSubHTTPConsumer) ConsumeHTTPRequest(request *http.Request) (cloudeve
 	if err != nil {
 		return cloudevents.Event{}, fmt.Errorf("decode pubsub message data: %w", err)
 	}
-	if !json.Valid(decodedData) {
-		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not valid JSON")
+
+	embeddedEvent, err := parseEmbeddedCloudEvent(decodedData)
+	if err != nil {
+		return cloudevents.Event{}, err
 	}
 
-	if embeddedEvent, ok := parseEmbeddedCloudEvent(decodedData); ok {
-		if envelope.DeliveryAttempt > 0 {
-			embeddedEvent.SetExtension("deliveryattempt", envelope.DeliveryAttempt)
-		}
-		return embeddedEvent, nil
+	if envelope.DeliveryAttempt > 0 {
+		embeddedEvent.SetExtension("deliveryattempt", envelope.DeliveryAttempt)
 	}
-
-	return cloudevents.Event{}, fmt.Errorf("pubsub message data is not a cloudevent")
+	return embeddedEvent, nil
 }
 
 // ConsumeHTTPRequestDataAs parses a Pub/Sub push request and decodes CloudEvent data into out.
@@ -83,13 +81,31 @@ func (c *PubSubHTTPConsumer) ConsumeHTTPRequestDataAs(request *http.Request, out
 	return event, nil
 }
 
-func parseEmbeddedCloudEvent(data []byte) (cloudevents.Event, bool) {
+func parseEmbeddedCloudEvent(data []byte) (cloudevents.Event, error) {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not valid JSON")
+	}
+
+	if _, ok := raw["specversion"]; !ok {
+		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not a cloudevent")
+	}
+	if _, ok := raw["id"]; !ok {
+		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not a cloudevent")
+	}
+	if _, ok := raw["source"]; !ok {
+		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not a cloudevent")
+	}
+	if _, ok := raw["type"]; !ok {
+		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not a cloudevent")
+	}
+
 	var embedded cloudevents.Event
 	if err := json.Unmarshal(data, &embedded); err != nil {
-		return cloudevents.Event{}, false
+		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not a cloudevent")
 	}
 	if embedded.SpecVersion() == "" || embedded.ID() == "" || embedded.Source() == "" || embedded.Type() == "" {
-		return cloudevents.Event{}, false
+		return cloudevents.Event{}, fmt.Errorf("pubsub message data is not a cloudevent")
 	}
-	return embedded, true
+	return embedded, nil
 }
