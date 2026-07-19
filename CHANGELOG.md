@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0](https://github.com/oneweave/go-gcp-pubsub-client/compare/v2.0.0...v2.1.0) (2026-07-19)
+
+
+### Features
+
+* cache gcp pubsub publishers ([65a7e63](https://github.com/oneweave/go-gcp-pubsub-client/commit/65a7e632eea17fd3698f430b816a5e3b72f623d6))
+
 ## [2.0.0](https://github.com/oneweave/go-gcp-pubsub-client/compare/v1.1.0...v2.0.0) (2026-07-19)
 
 
