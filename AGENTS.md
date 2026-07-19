@@ -16,22 +16,22 @@ Treat [README.md](README.md) as the primary usage and package overview.
 
 ## Consume Conventions
 
-- `consume.HTTPConsumer` parses direct CloudEvent HTTP requests.
-- `consume.PubSubHTTPConsumer` expects Pub/Sub `message.data` to contain an embedded CloudEvent JSON.
-- Treat non-CloudEvent Pub/Sub payload JSON as invalid input for `PubSubHTTPConsumer`.
-- Use `ConsumeHTTPRequestDataAs` when callers need typed decoding of embedded CloudEvent `data`.
+- `consume.EventConsumer` parses CloudEvents from wrapped envelope input.
+- `consume.EnvelopeConsumer` expects Pub/Sub `message.data` to contain an embedded CloudEvent JSON.
+- Treat non-CloudEvent Pub/Sub payload JSON as invalid input for `EnvelopeConsumer`.
+- Use `Consume` and then `event.DataAs(...)` when callers need typed decoding of embedded CloudEvent `data`.
 
 ## Root API Notes
 
 - Keep root package re-exports in `pubsub.go` aligned with subpackage APIs (`produce` and `consume`).
 - Root constructors should remain thin wrappers over subpackage constructors.
-- Preserve the module path `github.com/oneweave/go-gcp-pubsub-client` in examples and imports.
+- Preserve the module path `github.com/oneweave/go-gcp-pubsub-client/v2` in examples and imports.
 
 ## Publish Conventions
 
 - Wrap publish payloads as CloudEvents v1.0.
 - Default `datacontenttype` is `application/json` unless explicitly overridden.
-- Use CloudEvent `subject` for topic/routing helpers (for example via `PublishToTopic`).
+- Use CloudEvent `subject` for topic/routing helpers (for example via `WithSubject` in publish options).
 - Keep sender integration behind the `produce.Sender` interface.
 
 ## Go Conventions

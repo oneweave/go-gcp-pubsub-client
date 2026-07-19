@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/stretchr/testify/assert"
@@ -21,81 +20,105 @@ func (s *stubSender) Send(_ context.Context, event cloudevents.Event) error {
 	return s.err
 }
 
-func TestPublishWrapsPayloadAsCloudEvent(t *testing.T) {
+func TestPublishSendsCloudEventWithDefaultsAndOptions(t *testing.T) {
 	sender := &stubSender{}
-	publisher, err := NewPublisher(Config{
-		Source:           "oneweave://producer",
-		DefaultEventType: "artifact.ready",
-		DefaultExtensions: map[string]any{
-			"tenant": "dev",
-		},
-	}, sender)
+	publisher, err := NewPublisher(Config{}, sender)
 	require.NoError(t, err)
-	publisher.newID = func() string { return "evt-1" }
-	publisher.now = func() time.Time { return time.Unix(100, 0).UTC() }
 
-	payload := map[string]any{"id": "a-1"}
-	got, err := publisher.Publish(context.Background(), "", payload, WithSubject("artifacts"), WithExtension("region", "us-east-1"))
+	event := cloudevents.NewEvent(cloudevents.VersionV1)
+	event.SetID("evt-1")
+	event.SetType("artifact.ready")
+	event.SetSource("oneweave://producer")
+	require.NoError(t, event.SetData("application/json", map[string]any{"id": "a-1"}))
+
+	got, err := publisher.Publish(context.Background(), event, WithSubject("artifacts"), WithExtension("region", "us-east-1"))
 	require.NoError(t, err)
 	assert.Equal(t, "evt-1", got.ID())
 	assert.Equal(t, "artifact.ready", got.Type())
 	assert.Equal(t, "oneweave://producer", got.Source())
 	assert.Equal(t, "artifacts", got.Subject())
 	assert.Equal(t, "application/json", got.DataContentType())
-	assert.Equal(t, "dev", got.Extensions()["tenant"])
 	assert.Equal(t, "us-east-1", got.Extensions()["region"])
 	assert.Equal(t, "evt-1", sender.event.ID())
 }
 
-func TestPublishToTopicSetsSubject(t *testing.T) {
+func TestPublishWithSubjectSetsSubject(t *testing.T) {
 	sender := &stubSender{}
-	publisher, err := NewPublisher(Config{Source: "oneweave://producer", DefaultEventType: "evt"}, sender)
+	publisher, err := NewPublisher(Config{}, sender)
 	require.NoError(t, err)
+	event := cloudevents.NewEvent(cloudevents.VersionV1)
+	event.SetID("evt-1")
+	event.SetType("evt")
+	event.SetSource("oneweave://producer")
 
-	event, err := publisher.PublishToTopic(context.Background(), "topic-A", "evt", map[string]string{"ok": "true"})
+	event, err = publisher.Publish(context.Background(), event, WithSubject("topic-A"))
 	require.NoError(t, err)
 	assert.Equal(t, "topic-A", event.Subject())
 }
 
 func TestNewPublisherValidation(t *testing.T) {
 	t.Run("sender required", func(t *testing.T) {
-		publisher, err := NewPublisher(Config{Source: "oneweave://producer"}, nil)
+		publisher, err := NewPublisher(Config{}, nil)
 		require.Error(t, err)
 		assert.Nil(t, publisher)
 		assert.Contains(t, err.Error(), "sender is required")
 	})
 
-	t.Run("source required", func(t *testing.T) {
+	t.Run("config can be empty", func(t *testing.T) {
 		sender := &stubSender{}
 		publisher, err := NewPublisher(Config{}, sender)
-		require.Error(t, err)
-		assert.Nil(t, publisher)
-		assert.Contains(t, err.Error(), "source is required")
+		require.NoError(t, err)
+		assert.NotNil(t, publisher)
 	})
 }
 
 func TestPublishValidationAndErrors(t *testing.T) {
 	sender := &stubSender{}
-	publisher, err := NewPublisher(Config{Source: "oneweave://producer"}, sender)
+	publisher, err := NewPublisher(Config{}, sender)
 	require.NoError(t, err)
 
-	t.Run("payload required", func(t *testing.T) {
-		event, err := publisher.Publish(context.Background(), "evt", nil)
+	t.Run("event source required", func(t *testing.T) {
+		event := cloudevents.NewEvent(cloudevents.VersionV1)
+		event.SetID("evt-1")
+		event.SetType("evt")
+
+		event, err := publisher.Publish(context.Background(), event)
 		require.Error(t, err)
 		assert.Equal(t, cloudevents.Event{}, event)
-		assert.Contains(t, err.Error(), "payload is required")
+		assert.Contains(t, err.Error(), "invalid cloudevent")
 	})
 
 	t.Run("event type required", func(t *testing.T) {
-		event, err := publisher.Publish(context.Background(), "", map[string]string{"k": "v"})
+		event := cloudevents.NewEvent(cloudevents.VersionV1)
+		event.SetID("evt-1")
+		event.SetSource("oneweave://producer")
+
+		event, err := publisher.Publish(context.Background(), event)
 		require.Error(t, err)
 		assert.Equal(t, cloudevents.Event{}, event)
-		assert.Contains(t, err.Error(), "event type is required")
+		assert.Contains(t, err.Error(), "invalid cloudevent")
+	})
+
+	t.Run("event id required", func(t *testing.T) {
+		event := cloudevents.NewEvent(cloudevents.VersionV1)
+		event.SetType("evt")
+		event.SetSource("oneweave://producer")
+
+		event, err := publisher.Publish(context.Background(), event)
+		require.Error(t, err)
+		assert.Equal(t, cloudevents.Event{}, event)
+		assert.Contains(t, err.Error(), "invalid cloudevent")
 	})
 
 	t.Run("sender error wrapped", func(t *testing.T) {
 		sender.err = errors.New("transport down")
-		event, err := publisher.Publish(context.Background(), "evt", map[string]string{"k": "v"})
+		event := cloudevents.NewEvent(cloudevents.VersionV1)
+		event.SetID("evt-1")
+		event.SetType("evt")
+		event.SetSource("oneweave://producer")
+		require.NoError(t, event.SetData("application/json", map[string]string{"k": "v"}))
+
+		event, err := publisher.Publish(context.Background(), event)
 		require.Error(t, err)
 		assert.Equal(t, cloudevents.Event{}, event)
 		assert.Contains(t, err.Error(), "send cloudevent")
@@ -106,13 +129,17 @@ func TestPublishValidationAndErrors(t *testing.T) {
 
 func TestPublishWithContentTypeOverride(t *testing.T) {
 	sender := &stubSender{}
-	publisher, err := NewPublisher(Config{Source: "oneweave://producer", DefaultEventType: "evt"}, sender)
+	publisher, err := NewPublisher(Config{}, sender)
 	require.NoError(t, err)
+	event := cloudevents.NewEvent(cloudevents.VersionV1)
+	event.SetID("evt-1")
+	event.SetType("evt")
+	event.SetSource("oneweave://producer")
+	require.NoError(t, event.SetData("application/json", map[string]string{"ok": "true"}))
 
-	event, err := publisher.Publish(
+	event, err = publisher.Publish(
 		context.Background(),
-		"",
-		map[string]string{"ok": "true"},
+		event,
 		WithDataContentType("application/cloudevents+json"),
 	)
 	require.NoError(t, err)
