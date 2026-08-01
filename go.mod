@@ -1,9 +1,9 @@
 module github.com/oneweave/go-gcp-pubsub-client/v2
 
-go 1.25.0
+go 1.25.8
 
 require (
-	cloud.google.com/go/pubsub/v2 v2.6.0
+	cloud.google.com/go/pubsub/v2 v2.6.1
 	github.com/cloudevents/sdk-go/v2 v2.16.2
 	github.com/stretchr/testify v1.11.1
 )
